@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Measure from "react-measure";
 import { useUserMedia } from "../hooks/use-user-media";
 import { useCardRatio } from "../hooks/use-card-ratio";
@@ -15,7 +15,7 @@ import {
 
 const CAPTURE_OPTIONS = {
   audio: false,
-  video: { facingMode: "environment" },
+  video: { facingMode: "user" },
 };
 
 export function Camera({ onCapture, onClear }) {
@@ -26,8 +26,7 @@ export function Camera({ onCapture, onClear }) {
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
   const [isCanvasEmpty, setIsCanvasEmpty] = useState(true);
   const [isFlashing, setIsFlashing] = useState(false);
-
-  const mediaStream = useUserMedia(CAPTURE_OPTIONS);
+  const [mediaStream, setMediaStream] = useState(null);
   const [aspectRatio, calculateRatio] = useCardRatio(1.586);
   const offsets = useOffsets(
     videoRef.current && videoRef.current.videoWidth,
@@ -35,6 +34,30 @@ export function Camera({ onCapture, onClear }) {
     container.width,
     container.height
   );
+
+  useEffect(() => {
+    async function enableVideoStream() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: false,
+          video: true,
+        });
+        setMediaStream(stream);
+      } catch (err) {
+        // Handle the error
+      }
+    }
+
+    if (!mediaStream) {
+      enableVideoStream();
+    } else {
+      return function cleanup() {
+        mediaStream.getTracks().forEach((track) => {
+          track.stop();
+        });
+      };
+    }
+  }, []);
 
   if (mediaStream && videoRef.current && !videoRef.current.srcObject) {
     videoRef.current.srcObject = mediaStream;
