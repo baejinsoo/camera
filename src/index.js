@@ -9,27 +9,15 @@ function App() {
   const [mediaStream, setMediaStream] = useState(null);
 
   useEffect(() => {
-    async function enableVideoStream() {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          audio: false,
-          video: true,
-        });
+    navigator.mediaDevices
+      .getUserMedia({ audio: false, video: true })
+      .then((stream) => {
+        console.log("connect camera");
         setMediaStream(stream);
-      } catch (err) {
-        // Handle the error
-      }
-    }
-
-    if (!mediaStream) {
-      enableVideoStream();
-    } else {
-      return function cleanup() {
-        mediaStream.getTracks().forEach((track) => {
-          track.stop();
-        });
-      };
-    }
+      })
+      .catch((error) => {
+        console.log("fail camera");
+      });
   }, [isCameraOpen]);
 
   return (
